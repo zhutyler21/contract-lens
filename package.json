@@ -1,0 +1,21 @@
+{
+  "name": "word-contract-reviewer",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host localhost --port 3000",
+    "build": "vite build && node scripts/copy-static.mjs",
+    "copy-static": "node scripts/copy-static.mjs",
+    "preview": "vite preview --host localhost --port 4173",
+    "lint": "eslint \"src/**/*.js\" \"tests/**/*.js\"",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.3",
+    "@vitejs/plugin-basic-ssl": "^2.1.4",
+    "eslint": "^9.39.3",
+    "vite": "^7.3.1",
+    "vitest": "^4.0.18"
+  }
+}

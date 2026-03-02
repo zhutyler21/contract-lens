@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<OfficeApp xmlns="http://schemas.microsoft.com/office/appforoffice/1.1"
+           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+           xmlns:bt="http://schemas.microsoft.com/office/officeappbasictypes/1.0"
+           xmlns:ov="http://schemas.microsoft.com/office/taskpaneappversionoverrides"
+           xsi:type="TaskPaneApp">
+  <Id>93f4f1a9-a3a4-4ba8-a90c-b0af62d2f1f8</Id>
+  <Version>1.0.0.0</Version>
+  <ProviderName>Word合同审核助手</ProviderName>
+  <DefaultLocale>zh-CN</DefaultLocale>
+  <DisplayName DefaultValue="Word合同审核助手" />
+  <Description DefaultValue="使用 OpenAI API 审核合同并写入 Word 批注。" />
+  <IconUrl DefaultValue="https://localhost:3000/src/assets/icon-32.png" />
+  <HighResolutionIconUrl DefaultValue="https://localhost:3000/src/assets/icon-80.png" />
+  <SupportUrl DefaultValue="https://localhost:3000/support" />
+  <AppDomains>
+    <AppDomain>https://localhost:3000</AppDomain>
+  </AppDomains>
+  <Hosts>
+    <Host Name="Document" />
+  </Hosts>
+  <DefaultSettings>
+    <SourceLocation DefaultValue="https://localhost:3000/src/taskpane/taskpane.html" />
+  </DefaultSettings>
+  <Permissions>ReadWriteDocument</Permissions>
+  <VersionOverrides xsi:type="ov:VersionOverridesV1_0"
+                    xmlns="http://schemas.microsoft.com/office/taskpaneappversionoverrides">
+    <Hosts>
+      <Host xsi:type="Document">
+        <DesktopFormFactor>
+          <GetStarted>
+            <Title resid="GetStarted.Title" />
+            <Description resid="GetStarted.Description" />
+            <LearnMoreUrl resid="GetStarted.LearnMoreUrl" />
+          </GetStarted>
+          <FunctionFile resid="Commands.Url" />
+          <ExtensionPoint xsi:type="PrimaryCommandSurface">
+            <OfficeTab id="TabHome">
+              <Group id="ContractReviewGroup">
+                <Label resid="ContractReviewGroup.Label" />
+                <Icon>
+                  <bt:Image size="16" resid="Icon.16" />
+                  <bt:Image size="32" resid="Icon.32" />
+                  <bt:Image size="80" resid="Icon.80" />
+                </Icon>
+                <Control xsi:type="Button" id="OpenTaskpaneButton">
+                  <Label resid="OpenTaskpaneButton.Label" />
+                  <Supertip>
+                    <Title resid="OpenTaskpaneButton.Label" />
+                    <Description resid="OpenTaskpaneButton.Tooltip" />
+                  </Supertip>
+                  <Icon>
+                    <bt:Image size="16" resid="Icon.16" />
+                    <bt:Image size="32" resid="Icon.32" />
+                    <bt:Image size="80" resid="Icon.80" />
+                  </Icon>
+                  <Action xsi:type="ShowTaskpane">
+                    <TaskpaneId>ContractReviewPane</TaskpaneId>
+                    <SourceLocation resid="Taskpane.Url" />
+                  </Action>
+                </Control>
+                <Control xsi:type="Button" id="QuickReviewButton">
+                  <Label resid="QuickReviewButton.Label" />
+                  <Supertip>
+                    <Title resid="QuickReviewButton.Label" />
+                    <Description resid="QuickReviewButton.Tooltip" />
+                  </Supertip>
+                  <Icon>
+                    <bt:Image size="16" resid="Icon.16" />
+                    <bt:Image size="32" resid="Icon.32" />
+                    <bt:Image size="80" resid="Icon.80" />
+                  </Icon>
+                  <Action xsi:type="ExecuteFunction">
+                    <FunctionName>quickReview</FunctionName>
+                  </Action>
+                </Control>
+                <Control xsi:type="Button" id="ClearCommentsButton">
+                  <Label resid="ClearCommentsButton.Label" />
+                  <Supertip>
+                    <Title resid="ClearCommentsButton.Label" />
+                    <Description resid="ClearCommentsButton.Tooltip" />
+                  </Supertip>
+                  <Icon>
+                    <bt:Image size="16" resid="Icon.16" />
+                    <bt:Image size="32" resid="Icon.32" />
+                    <bt:Image size="80" resid="Icon.80" />
+                  </Icon>
+                  <Action xsi:type="ExecuteFunction">
+                    <FunctionName>clearAiCommentsFromRibbon</FunctionName>
+                  </Action>
+                </Control>
+              </Group>
+            </OfficeTab>
+          </ExtensionPoint>
+        </DesktopFormFactor>
+      </Host>
+    </Hosts>
+    <Resources>
+      <bt:Images>
+        <bt:Image id="Icon.16" DefaultValue="https://localhost:3000/src/assets/icon-16.png" />
+        <bt:Image id="Icon.32" DefaultValue="https://localhost:3000/src/assets/icon-32.png" />
+        <bt:Image id="Icon.80" DefaultValue="https://localhost:3000/src/assets/icon-80.png" />
+      </bt:Images>
+      <bt:Urls>
+        <bt:Url id="GetStarted.LearnMoreUrl" DefaultValue="https://learn.microsoft.com/office/dev/add-ins/" />
+        <bt:Url id="Commands.Url" DefaultValue="https://localhost:3000/src/commands/commands.html" />
+        <bt:Url id="Taskpane.Url" DefaultValue="https://localhost:3000/src/taskpane/taskpane.html" />
+      </bt:Urls>
+      <bt:ShortStrings>
+        <bt:String id="GetStarted.Title" DefaultValue="Word合同审核助手" />
+        <bt:String id="ContractReviewGroup.Label" DefaultValue="合同审核" />
+        <bt:String id="OpenTaskpaneButton.Label" DefaultValue="打开审核面板" />
+        <bt:String id="QuickReviewButton.Label" DefaultValue="快速审核" />
+        <bt:String id="ClearCommentsButton.Label" DefaultValue="清除AI批注" />
+      </bt:ShortStrings>
+      <bt:LongStrings>
+        <bt:String id="GetStarted.Description" DefaultValue="侧边栏提供合同审阅、批注、导出与清理功能。" />
+        <bt:String id="OpenTaskpaneButton.Tooltip" DefaultValue="打开合同审核侧边栏。" />
+        <bt:String id="QuickReviewButton.Tooltip" DefaultValue="打开侧边栏并触发全文审核。" />
+        <bt:String id="ClearCommentsButton.Tooltip" DefaultValue="清理文档中的 [AI审核] 批注。" />
+      </bt:LongStrings>
+    </Resources>
+  </VersionOverrides>
+</OfficeApp>

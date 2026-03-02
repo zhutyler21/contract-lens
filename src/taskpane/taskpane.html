@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Word合同审核助手</title>
+    <link rel="stylesheet" href="./taskpane.css" />
+    <script src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"></script>
+  </head>
+  <body>
+    <main class="container">
+      <section class="panel">
+        <details open>
+          <summary>配置</summary>
+          <div class="grid">
+            <label for="apiUrl">API 地址</label>
+            <input id="apiUrl" type="url" placeholder="https://api.openai.com/v1/chat/completions" />
+
+            <label for="apiKey">API Key</label>
+            <input id="apiKey" type="password" placeholder="sk-..." />
+
+            <label for="modelName">模型名称</label>
+            <input id="modelName" type="text" placeholder="gpt-5-mini" />
+
+            <label for="prompt">审核 Prompt</label>
+            <textarea id="prompt" rows="6"></textarea>
+          </div>
+          <div class="actions">
+            <button id="saveSettingsBtn" type="button">保存配置</button>
+          </div>
+          <p class="hint">安全提示：API Key 仅保存在当前浏览器会话中，关闭页面后需重新输入。</p>
+        </details>
+      </section>
+
+      <section class="panel">
+        <h2>审核操作</h2>
+        <div class="actions">
+          <button id="reviewAllBtn" type="button">审核全文</button>
+          <button id="reviewSelectionBtn" type="button">审核选中内容</button>
+        </div>
+        <div class="toggle-row">
+          <div class="toggle-copy">
+            <p class="toggle-title">测试模式（Mock）</p>
+            <p class="toggle-desc">开启后使用本地模拟结果，不调用真实 API。</p>
+          </div>
+          <label class="switch" for="mockModeToggle" aria-label="切换测试模式">
+            <input id="mockModeToggle" type="checkbox" />
+            <span class="switch-track"></span>
+          </label>
+        </div>
+        <div id="progressWrap" class="progress hidden">
+          <progress id="progressBar" max="100" value="0"></progress>
+          <span id="progressText">0%</span>
+        </div>
+        <p id="progressDetail" class="muted">等待开始</p>
+        <div class="actions">
+          <button id="cancelBtn" type="button" class="danger" disabled>取消</button>
+        </div>
+      </section>
+
+      <section class="panel">
+        <h2>批注管理</h2>
+        <div class="grid">
+          <label for="riskFilter">风险筛选</label>
+          <select id="riskFilter">
+            <option value="all">全部</option>
+            <option value="critical">严重</option>
+            <option value="high">高</option>
+            <option value="medium">中</option>
+            <option value="low">低</option>
+          </select>
+        </div>
+        <p id="summaryText" class="muted">暂无审核结果</p>
+        <ul id="reviewList" class="review-list"></ul>
+        <div class="actions">
+          <button id="exportReportBtn" type="button">导出报告</button>
+          <button id="clearCommentsBtn" type="button" class="danger">清除AI批注</button>
+        </div>
+      </section>
+
+      <section class="panel">
+        <h2>状态</h2>
+        <p id="statusText" class="status info">就绪</p>
+        <p id="errorText" class="status error hidden"></p>
+      </section>
+    </main>
+
+    <script type="module" src="./taskpane.js"></script>
+  </body>
+</html>
