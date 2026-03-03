@@ -239,6 +239,8 @@ npm run dev
 
 > API Key 仅保存在当前浏览器会话（`sessionStorage`），关闭页面后需要重新输入。
 
+> 💡 **API 中转服务**：如需稳定的 OpenAI API 访问，可参考 [清心API](https://api.psylabs.top) 等中转服务。
+
 配置完成后，你可以：
 
 - 点击 **审核全文** — 审核整篇合同
