@@ -1,4 +1,4 @@
-# Word 合同审核插件
+# ContractLens - Word合同审核助手
 
 基于 Office Add-in + Vite 的 Word 合同审核工具。
 在 Word 中读取段落，调用 OpenAI 接口生成风险审查结果，并自动写入 `[AI审核]` 批注。
@@ -82,7 +82,7 @@ Node.js 是运行本插件所需的基础环境。
 **方式 A：直接下载压缩包（推荐新手）**
 
 1. 在项目页面点击绿色的 **Code** 按钮，选择 **Download ZIP**
-2. 将下载的压缩包解压到你喜欢的位置，例如 `D:\word合同审核插件`
+2. 将下载的压缩包解压到你喜欢的位置，例如 `D:\ContractLens`
 
 **方式 B：使用 Git 克隆（如果你已安装 Git）**
 
@@ -101,7 +101,7 @@ git clone <仓库地址>
 
    > 或者：按 `Win + R` 输入 `cmd`，然后用 `cd` 命令切换到项目目录：
    > ```
-   > cd /d D:\word合同审核插件
+   > cd /d D:\ContractLens
    > ```
 
 2. 在命令提示符中输入：
@@ -172,9 +172,9 @@ npm run dev
 2. 导航到：`HKEY_CURRENT_USER\Software\Microsoft\Office\16.0\WEF\Developer`
    （如果 `WEF` 或 `Developer` 键不存在，右键新建）
 3. 在右侧空白处右键 → **新建** → **字符串值**
-4. 名称输入 `WordContractReviewer`
+4. 名称输入 `ContractLens`
 5. 双击该值，数据填入 `manifest.xml` 的完整路径，例如：
-   `D:\word合同审核插件\manifest.xml`
+   `D:\ContractLens\manifest.xml`
 
 ---
 
@@ -265,7 +265,7 @@ $env:ADDIN_BASE_URL="https://addins.example.com"; npm run build
 ```powershell
 .\scripts\setup-local-word-addin.ps1 `
   -ManifestPath .\manifest.xml `
-  -RegistryValueName WordContractReviewer `
+  -RegistryValueName ContractLens `
   -OfficeVersion 16.0 `
   -PemPath .\node_modules\.vite\basic-ssl\_cert.pem
 ```
@@ -273,7 +273,7 @@ $env:ADDIN_BASE_URL="https://addins.example.com"; npm run build
 | 参数 | 说明 | 默认值 |
 |------|------|--------|
 | `-ManifestPath` | manifest 文件路径 | 仓库根目录 `manifest.xml` |
-| `-RegistryValueName` | 注册表值名称 | `WordContractReviewer` |
+| `-RegistryValueName` | 注册表值名称 | `ContractLens` |
 | `-OfficeVersion` | Office 注册表版本号 | `16.0` |
 | `-PemPath` | Vite 证书 PEM 路径 | `node_modules/.vite/basic-ssl/_cert.pem` |
 | `-SkipCertificate` | 仅登记注册表，跳过证书导入 | — |

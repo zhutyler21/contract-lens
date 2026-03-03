@@ -1,7 +1,7 @@
 import { API_TIMEOUT_MS, MAX_TIMEOUT_MS, MIN_TIMEOUT_MS, RETRY_TIMES, logError } from "./utils.js";
 
-const SETTINGS_STORAGE_KEY = "wordContractReviewer.settings";
-const SESSION_API_KEY_KEY = "wordContractReviewer.sessionApiKey";
+const SETTINGS_STORAGE_KEY = "contractLens.settings";
+const SESSION_API_KEY_KEY = "contractLens.sessionApiKey";
 const LEGACY_DEFAULT_API_URL = "https://api.openai.com/v1/chat/completions";
 const API_URL_DEFAULT_VERSION = 2;
 const MIN_TIMEOUT_SECONDS = Math.round(MIN_TIMEOUT_MS / 1000);

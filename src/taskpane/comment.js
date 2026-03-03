@@ -9,7 +9,7 @@ import {
   summarizeByRisk
 } from "./utils.js";
 
-const REVIEW_CACHE_KEY = "wordContractReviewer.latestReviews";
+const REVIEW_CACHE_KEY = "contractLens.latestReviews";
 const COMMENT_SYNC_BATCH_SIZE = 20;
 
 export async function applyReviewComments(reviews, options = {}) {

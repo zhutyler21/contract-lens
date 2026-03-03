@@ -4,7 +4,7 @@ import { exportReviewReport } from "./export.js";
 import { reviewContract } from "./reviewer.js";
 import { getRiskLabel } from "./utils.js";
 
-const LOG_PREFIX = "[word-contract-reviewer][taskpane]";
+const LOG_PREFIX = "[ContractLens][taskpane]";
 const DEFAULT_STATUS_STEPS = Object.freeze({
   current: "待命",
   next: "点击“审核全文”或“审核选中内容”开始审核"
@@ -616,12 +616,12 @@ async function consumeRibbonAction() {
     return;
   }
 
-  const action = await OfficeRuntime.storage.getItem("wordContractReviewer.pendingAction");
+  const action = await OfficeRuntime.storage.getItem("contractLens.pendingAction");
   if (!action) {
     return;
   }
 
-  await OfficeRuntime.storage.removeItem("wordContractReviewer.pendingAction");
+  await OfficeRuntime.storage.removeItem("contractLens.pendingAction");
 
   if (action === "quickReview") {
     await startReview("all");

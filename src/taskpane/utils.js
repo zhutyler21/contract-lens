@@ -7,7 +7,7 @@ export const RETRY_BASE_DELAY_MS = 500;
 export const RETRY_MAX_DELAY_MS = 5000;
 export const REVIEW_PREFIX = "[AI审核]";
 
-const ERROR_LOG_KEY = "wordContractReviewer.errorLogs";
+const ERROR_LOG_KEY = "contractLens.errorLogs";
 
 export const RISK_META = Object.freeze({
   critical: { label: "严重", color: "#FF0000", rank: 0 },
@@ -179,7 +179,7 @@ export function logError(message, details = "") {
     // Ignore local storage errors for runtime safety.
   }
 
-  console.error("[word-contract-reviewer]", entry);
+  console.error("[ContractLens]", entry);
 }
 
 export function createAbortError() {

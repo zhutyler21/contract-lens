@@ -12,7 +12,7 @@ import {
 } from "./utils.js";
 import { generateMockReviews } from "./mock.js";
 
-const LOG_PREFIX = "[word-contract-reviewer][api]";
+const LOG_PREFIX = "[ContractLens][api]";
 
 export async function callReviewApi(paragraphs, settings, options = {}) {
   const { mockMode = false, signal, onAttempt } = options;

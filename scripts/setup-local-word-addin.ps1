@@ -1,7 +1,7 @@
 [CmdletBinding()]
 param(
   [string]$ManifestPath,
-  [string]$RegistryValueName = "WordContractReviewer",
+  [string]$RegistryValueName = "ContractLens",
   [string]$PemPath,
   [string]$OfficeVersion = "16.0",
   [switch]$SkipCertificate

@@ -2,7 +2,7 @@ function markPendingAction(action) {
   if (typeof OfficeRuntime === "undefined" || !OfficeRuntime.storage) {
     return Promise.resolve();
   }
-  return OfficeRuntime.storage.setItem("wordContractReviewer.pendingAction", action);
+  return OfficeRuntime.storage.setItem("contractLens.pendingAction", action);
 }
 
 function completeEvent(event) {

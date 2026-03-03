@@ -1,7 +1,7 @@
 import { callReviewApi } from "./api.js";
 import { MAX_CHARACTERS, createAbortError, logError, sumCharacters } from "./utils.js";
 
-const LOG_PREFIX = "[word-contract-reviewer][reviewer]";
+const LOG_PREFIX = "[ContractLens][reviewer]";
 
 export async function reviewContract(options = {}) {
   const {
