@@ -1,5 +1,7 @@
 import {
   API_TIMEOUT_MS,
+  MAX_TIMEOUT_MS,
+  MIN_TIMEOUT_MS,
   RETRY_BASE_DELAY_MS,
   RETRY_MAX_DELAY_MS,
   RETRY_TIMES,
@@ -213,6 +215,11 @@ async function fetchWithTimeout(url, init, timeoutMs, signal) {
           return;
         }
 
+        if (error instanceof TypeError) {
+          settle(reject, createNetworkError(url, error));
+          return;
+        }
+
         settle(reject, error);
       });
   });
@@ -221,6 +228,10 @@ async function fetchWithTimeout(url, init, timeoutMs, signal) {
 function shouldRetry(error) {
   if (!error) {
     return false;
+  }
+
+  if (error.name === "NetworkError") {
+    return true;
   }
 
   if (error.name === "TimeoutError") {
@@ -253,5 +264,35 @@ function resolveTimeoutMs(settings) {
   if (!Number.isInteger(value)) {
     return API_TIMEOUT_MS;
   }
-  return Math.min(Math.max(value, 5000), 180000);
+  return Math.min(Math.max(value, MIN_TIMEOUT_MS), MAX_TIMEOUT_MS);
+}
+
+function createNetworkError(url, error) {
+  const safeUrl = sanitizeUrlForMessage(url);
+  const originalMessage = String(error?.message || "Network request failed");
+  const hint = originalMessage.toLowerCase().includes("failed to fetch")
+    ? "可能被浏览器/Office Web 的安全策略（CSP/CORS）拦截，或被代理/防火墙中断。"
+    : "请检查网络、代理/VPN、防火墙和 API 地址是否可达。";
+
+  const networkError = new Error(
+    `无法连接审核 API（${safeUrl}）。${hint} 原始错误：${originalMessage}`
+  );
+  networkError.name = "NetworkError";
+  networkError.url = safeUrl;
+  networkError.cause = error;
+  return networkError;
+}
+
+function sanitizeUrlForMessage(url) {
+  const value = String(url || "").trim();
+  if (!value) {
+    return "未知地址";
+  }
+
+  try {
+    const parsed = new URL(value, globalThis.location?.origin);
+    return `${parsed.origin}${parsed.pathname}`;
+  } catch (_error) {
+    return value;
+  }
 }

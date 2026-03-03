@@ -10,11 +10,12 @@
   <body>
     <main class="container">
       <section class="panel">
-        <details open>
-          <summary>配置</summary>
+        <h2>大模型配置</h2>
+        <details>
+          <summary>大模型配置</summary>
           <div class="grid">
             <label for="apiUrl">API 地址</label>
-            <input id="apiUrl" type="url" placeholder="https://api.openai.com/v1/chat/completions" />
+            <input id="apiUrl" type="url" placeholder="https://api.psylabs.top/v1/chat/completions" />
 
             <label for="apiKey">API Key</label>
             <input id="apiKey" type="password" placeholder="sk-..." />
@@ -22,37 +23,51 @@
             <label for="modelName">模型名称</label>
             <input id="modelName" type="text" placeholder="gpt-5-mini" />
 
-            <label for="prompt">审核 Prompt</label>
-            <textarea id="prompt" rows="6"></textarea>
+            <label for="timeoutSec">请求超时（秒）</label>
+            <input id="timeoutSec" type="number" min="5" max="600" step="1" placeholder="120" />
+
+            <label for="retryTimes">重试次数</label>
+            <input id="retryTimes" type="number" min="0" max="5" step="1" placeholder="2" />
           </div>
-          <div class="actions">
-            <button id="saveSettingsBtn" type="button">保存配置</button>
+          <div class="toggle-row">
+            <div class="toggle-copy">
+              <p class="toggle-title">测试模式（Mock）</p>
+              <p class="toggle-desc">开启后使用本地模拟结果，不调用真实 API。</p>
+            </div>
+            <label class="switch" for="mockModeToggle" aria-label="切换测试模式">
+              <input id="mockModeToggle" type="checkbox" />
+              <span class="switch-track"></span>
+            </label>
           </div>
           <p class="hint">安全提示：API Key 仅保存在当前浏览器会话中，关闭页面后需重新输入。</p>
         </details>
+        <details open>
+          <summary>提示词配置</summary>
+          <div class="prompt-stack">
+            <label for="prompt">系统提示词</label>
+            <textarea id="prompt" rows="8"></textarea>
+          </div>
+        </details>
+        <div class="actions">
+          <button id="saveSettingsBtn" type="button">保存配置</button>
+        </div>
       </section>
 
       <section class="panel">
-        <h2>审核操作</h2>
+        <h2>审核与状态</h2>
         <div class="actions">
           <button id="reviewAllBtn" type="button">审核全文</button>
           <button id="reviewSelectionBtn" type="button">审核选中内容</button>
-        </div>
-        <div class="toggle-row">
-          <div class="toggle-copy">
-            <p class="toggle-title">测试模式（Mock）</p>
-            <p class="toggle-desc">开启后使用本地模拟结果，不调用真实 API。</p>
-          </div>
-          <label class="switch" for="mockModeToggle" aria-label="切换测试模式">
-            <input id="mockModeToggle" type="checkbox" />
-            <span class="switch-track"></span>
-          </label>
         </div>
         <div id="progressWrap" class="progress hidden">
           <progress id="progressBar" max="100" value="0"></progress>
           <span id="progressText">0%</span>
         </div>
         <p id="progressDetail" class="muted">等待开始</p>
+        <p id="statusText" class="status info">就绪</p>
+        <p id="statusCurrentStep" class="status-step">当前步骤：待命</p>
+        <p id="statusNextStep" class="status-step">下一步骤：点击“审核全文”或“审核选中内容”开始审核</p>
+        <p id="errorText" class="status error hidden"></p>
         <div class="actions">
           <button id="cancelBtn" type="button" class="danger" disabled>取消</button>
         </div>
@@ -78,11 +93,6 @@
         </div>
       </section>
 
-      <section class="panel">
-        <h2>状态</h2>
-        <p id="statusText" class="status info">就绪</p>
-        <p id="errorText" class="status error hidden"></p>
-      </section>
     </main>
 
     <script type="module" src="./taskpane.js"></script>

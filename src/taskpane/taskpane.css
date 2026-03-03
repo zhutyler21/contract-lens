@@ -49,7 +49,7 @@ body {
   background: linear-gradient(180deg, var(--bg-soft) 0%, var(--bg) 140px);
   color: var(--text);
   font-family: "Segoe UI", "Microsoft YaHei", sans-serif;
-  font-size: 13px;
+  font-size: 14px;
   line-height: 1.45;
 }
 
@@ -62,7 +62,7 @@ body {
 
 h2 {
   margin: 0 0 6px;
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 600;
 }
 
@@ -76,7 +76,7 @@ h2 {
 
 details > summary {
   cursor: pointer;
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 600;
   list-style: none;
 }
@@ -99,6 +99,10 @@ details[open] > summary {
   margin-bottom: 8px;
 }
 
+.panel details + details {
+  margin-top: 8px;
+}
+
 .grid {
   display: grid;
   grid-template-columns: 82px 1fr;
@@ -109,7 +113,18 @@ details[open] > summary {
 .grid > label {
   padding-top: 6px;
   color: var(--muted);
-  font-size: 12px;
+  font-size: 13px;
+}
+
+.prompt-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.prompt-stack > label {
+  color: var(--muted);
+  font-size: 13px;
 }
 
 input,
@@ -128,7 +143,7 @@ select {
   border-radius: 6px;
   background: var(--input-bg);
   color: var(--text);
-  font-size: 12px;
+  font-size: 13px;
 }
 
 input:not([type="checkbox"]):focus,
@@ -140,6 +155,10 @@ select:focus {
 
 textarea {
   resize: vertical;
+}
+
+#prompt {
+  min-height: 120px;
 }
 
 .actions {
@@ -156,7 +175,7 @@ button {
   cursor: pointer;
   background: var(--brand);
   color: #fff;
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 600;
   transition: background-color 0.15s ease, transform 0.1s ease;
 }
@@ -193,14 +212,14 @@ button.danger {
 .toggle-title {
   margin: 0;
   color: var(--text);
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 600;
 }
 
 .toggle-desc {
   margin: 2px 0 0;
   color: var(--muted);
-  font-size: 11px;
+  font-size: 12px;
 }
 
 .switch {
@@ -263,18 +282,24 @@ progress {
 .muted {
   margin: 6px 0 0;
   color: var(--muted);
-  font-size: 12px;
+  font-size: 13px;
 }
 
 .hint {
   margin: 6px 0 0;
   color: var(--muted);
-  font-size: 12px;
+  font-size: 13px;
 }
 
 .status {
   margin: 0;
-  font-size: 12px;
+  font-size: 13px;
+}
+
+.status-step {
+  margin: 4px 0 0;
+  color: var(--muted);
+  font-size: 13px;
 }
 
 .status.info {
@@ -338,12 +363,12 @@ progress {
   display: flex;
   justify-content: space-between;
   gap: 6px;
-  font-size: 12px;
+  font-size: 13px;
 }
 
 .review-issue {
   margin: 0;
-  font-size: 12px;
+  font-size: 13px;
 }
 
 .review-actions {
@@ -353,5 +378,5 @@ progress {
 
 .review-actions button {
   padding: 4px 7px;
-  font-size: 12px;
+  font-size: 13px;
 }

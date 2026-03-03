@@ -125,6 +125,25 @@ describe("api.callReviewApi", () => {
     expect(onAttempt).toHaveBeenNthCalledWith(1, 1, 2);
     expect(onAttempt).toHaveBeenNthCalledWith(2, 2, 2);
   });
+
+  it("wraps transport errors as NetworkError with actionable message", async () => {
+    const fetchMock = globalThis.fetch;
+    fetchMock.mockRejectedValueOnce(new TypeError("Failed to fetch"));
+
+    let capturedError;
+    try {
+      await callReviewApi(sampleParagraphs, {
+        ...baseSettings,
+        retryTimes: 0
+      });
+    } catch (error) {
+      capturedError = error;
+    }
+
+    expect(capturedError).toMatchObject({ name: "NetworkError" });
+    expect(capturedError.message).toContain("无法连接审核 API");
+    expect(capturedError.message).toContain("CSP/CORS");
+  });
 });
 
 function createErrorResponse(status, message) {

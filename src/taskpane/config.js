@@ -1,7 +1,11 @@
-import { API_TIMEOUT_MS, RETRY_TIMES, logError } from "./utils.js";
+import { API_TIMEOUT_MS, MAX_TIMEOUT_MS, MIN_TIMEOUT_MS, RETRY_TIMES, logError } from "./utils.js";
 
 const SETTINGS_STORAGE_KEY = "wordContractReviewer.settings";
 const SESSION_API_KEY_KEY = "wordContractReviewer.sessionApiKey";
+const LEGACY_DEFAULT_API_URL = "https://api.openai.com/v1/chat/completions";
+const API_URL_DEFAULT_VERSION = 2;
+const MIN_TIMEOUT_SECONDS = Math.round(MIN_TIMEOUT_MS / 1000);
+const MAX_TIMEOUT_SECONDS = Math.round(MAX_TIMEOUT_MS / 1000);
 
 export const DEFAULT_PROMPT = [
   "你是一位专业的合同审核专家。请仔细审核以下合同段落，识别潜在的法律风险、不合理条款和需要改进的地方。",
@@ -22,9 +26,10 @@ export const DEFAULT_PROMPT = [
 ].join("\n");
 
 export const DEFAULT_SETTINGS = Object.freeze({
-  apiUrl: "https://api.openai.com/v1/chat/completions",
+  apiUrl: "https://api.psylabs.top/v1/chat/completions",
   apiKey: "",
   modelName: "gpt-5-mini",
+  mockMode: false,
   commentAuthor: "AI合同审核助手",
   prompt: DEFAULT_PROMPT,
   timeoutMs: API_TIMEOUT_MS,
@@ -34,13 +39,20 @@ export const DEFAULT_SETTINGS = Object.freeze({
 export async function loadSettings() {
   const fileSettings = await readSettingsFile();
   const localSettings = readLocalSettings();
+  const { settings: migratedLocalSettings, changed: apiUrlMigrated } = migrateLegacyDefaultApiUrl(localSettings);
   const apiKey = readSessionApiKey();
-  return sanitizeSettings({
+  const settings = sanitizeSettings({
     ...DEFAULT_SETTINGS,
     ...fileSettings,
-    ...localSettings,
+    ...migratedLocalSettings,
     apiKey
   });
+
+  if (apiUrlMigrated) {
+    persistLocalSettings(settings);
+  }
+
+  return settings;
 }
 
 export function saveSettings(inputSettings) {
@@ -48,12 +60,7 @@ export function saveSettings(inputSettings) {
   const { apiKey, ...persistedSettings } = settings;
 
   writeSessionApiKey(apiKey);
-
-  try {
-    localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(persistedSettings));
-  } catch (error) {
-    logError("保存本地配置失败", error?.message || String(error));
-  }
+  persistLocalSettings(persistedSettings);
 
   return settings;
 }
@@ -71,7 +78,7 @@ export function validateSettings(settings, { requireApiKey = true } = {}) {
   }
 
   if (!String(rawSettings.prompt || "").trim()) {
-    errors.push("审核 Prompt 不能为空。");
+    errors.push("系统提示词不能为空。");
   }
 
   if (requireApiKey && !String(rawSettings.apiKey || "").trim()) {
@@ -80,8 +87,8 @@ export function validateSettings(settings, { requireApiKey = true } = {}) {
 
   if (rawSettings.timeoutMs !== undefined) {
     const timeoutMs = Number.parseInt(rawSettings.timeoutMs, 10);
-    if (!Number.isInteger(timeoutMs) || timeoutMs < 5000 || timeoutMs > 180000) {
-      errors.push("请求超时配置无效（应在 5000-180000 毫秒）。");
+    if (!Number.isInteger(timeoutMs) || timeoutMs < MIN_TIMEOUT_MS || timeoutMs > MAX_TIMEOUT_MS) {
+      errors.push(`请求超时配置无效（应在 ${MIN_TIMEOUT_SECONDS}-${MAX_TIMEOUT_SECONDS} 秒）。`);
     }
   }
 
@@ -103,9 +110,13 @@ function sanitizeSettings(inputSettings = {}) {
     apiUrl: String(inputSettings.apiUrl || DEFAULT_SETTINGS.apiUrl).trim(),
     apiKey: String(inputSettings.apiKey || "").trim(),
     modelName: String(inputSettings.modelName || DEFAULT_SETTINGS.modelName).trim(),
+    mockMode: normalizeBoolean(inputSettings.mockMode, DEFAULT_SETTINGS.mockMode),
     commentAuthor: String(inputSettings.commentAuthor || DEFAULT_SETTINGS.commentAuthor).trim(),
     prompt: String(inputSettings.prompt || DEFAULT_SETTINGS.prompt).trim(),
-    timeoutMs: normalizeInteger(inputSettings.timeoutMs, DEFAULT_SETTINGS.timeoutMs, { min: 5000, max: 180000 }),
+    timeoutMs: normalizeInteger(inputSettings.timeoutMs, DEFAULT_SETTINGS.timeoutMs, {
+      min: MIN_TIMEOUT_MS,
+      max: MAX_TIMEOUT_MS
+    }),
     retryTimes: normalizeInteger(inputSettings.retryTimes, DEFAULT_SETTINGS.retryTimes, { min: 0, max: 5 })
   };
 }
@@ -171,10 +182,65 @@ function writeSessionApiKey(apiKey) {
   }
 }
 
+function persistLocalSettings(settings) {
+  try {
+    localStorage.setItem(
+      SETTINGS_STORAGE_KEY,
+      JSON.stringify({
+        ...settings,
+        apiUrlVersion: API_URL_DEFAULT_VERSION
+      })
+    );
+  } catch (error) {
+    logError("保存本地配置失败", error?.message || String(error));
+  }
+}
+
+function migrateLegacyDefaultApiUrl(localSettings = {}) {
+  const apiUrl = String(localSettings.apiUrl || "").trim();
+  const apiUrlVersion = Number.parseInt(localSettings.apiUrlVersion, 10);
+  const hasNewVersionTag = Number.isInteger(apiUrlVersion) && apiUrlVersion >= API_URL_DEFAULT_VERSION;
+  const shouldMigrate = !hasNewVersionTag && apiUrl === LEGACY_DEFAULT_API_URL;
+
+  if (!shouldMigrate) {
+    return {
+      settings: localSettings,
+      changed: false
+    };
+  }
+
+  return {
+    settings: {
+      ...localSettings,
+      apiUrl: DEFAULT_SETTINGS.apiUrl,
+      apiUrlVersion: API_URL_DEFAULT_VERSION
+    },
+    changed: true
+  };
+}
+
 function normalizeInteger(value, fallback, { min, max }) {
   const parsed = Number.parseInt(value, 10);
   if (!Number.isInteger(parsed)) {
     return fallback;
   }
   return Math.min(Math.max(parsed, min), max);
+}
+
+function normalizeBoolean(value, fallback) {
+  if (typeof value === "boolean") {
+    return value;
+  }
+
+  if (typeof value === "string") {
+    const normalized = value.trim().toLowerCase();
+    if (normalized === "true") {
+      return true;
+    }
+    if (normalized === "false") {
+      return false;
+    }
+  }
+
+  return fallback;
 }

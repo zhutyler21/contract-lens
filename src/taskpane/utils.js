@@ -1,5 +1,7 @@
 export const MAX_CHARACTERS = 30000;
-export const API_TIMEOUT_MS = 45000;
+export const MIN_TIMEOUT_MS = 5000;
+export const MAX_TIMEOUT_MS = 600000;
+export const API_TIMEOUT_MS = 120000;
 export const RETRY_TIMES = 2;
 export const RETRY_BASE_DELAY_MS = 500;
 export const RETRY_MAX_DELAY_MS = 5000;

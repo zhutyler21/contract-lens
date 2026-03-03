@@ -75,12 +75,14 @@ describe("config storage behavior", () => {
   it("stores api key in session storage only", () => {
     saveSettings({
       ...DEFAULT_SETTINGS,
+      mockMode: true,
       apiKey: "sk-session-only"
     });
 
     const persisted = JSON.parse(globalThis.localStorage.getItem(SETTINGS_STORAGE_KEY) || "{}");
 
     expect(persisted.apiKey).toBeUndefined();
+    expect(persisted.mockMode).toBe(true);
     expect(globalThis.sessionStorage.getItem(SESSION_API_KEY_KEY)).toBe("sk-session-only");
   });
 
@@ -88,6 +90,7 @@ describe("config storage behavior", () => {
     globalThis.localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify({
       ...DEFAULT_SETTINGS,
       apiKey: "sk-should-not-be-used",
+      mockMode: true,
       modelName: "gpt-5-mini"
     }));
     globalThis.sessionStorage.setItem(SESSION_API_KEY_KEY, "sk-from-session");
@@ -95,5 +98,20 @@ describe("config storage behavior", () => {
     const settings = await loadSettings();
 
     expect(settings.apiKey).toBe("sk-from-session");
+    expect(settings.mockMode).toBe(true);
+  });
+
+  it("migrates legacy default api url in local storage", async () => {
+    globalThis.localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify({
+      ...DEFAULT_SETTINGS,
+      apiUrl: "https://api.openai.com/v1/chat/completions"
+    }));
+
+    const settings = await loadSettings();
+    const persisted = JSON.parse(globalThis.localStorage.getItem(SETTINGS_STORAGE_KEY) || "{}");
+
+    expect(settings.apiUrl).toBe(DEFAULT_SETTINGS.apiUrl);
+    expect(persisted.apiUrl).toBe(DEFAULT_SETTINGS.apiUrl);
+    expect(persisted.apiUrlVersion).toBe(2);
   });
 });

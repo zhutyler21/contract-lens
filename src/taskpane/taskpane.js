@@ -5,6 +5,11 @@ import { reviewContract } from "./reviewer.js";
 import { getRiskLabel } from "./utils.js";
 
 const LOG_PREFIX = "[word-contract-reviewer][taskpane]";
+const DEFAULT_STATUS_STEPS = Object.freeze({
+  current: "待命",
+  next: "点击“审核全文”或“审核选中内容”开始审核"
+});
+const TIMEOUT_SECONDS_DIVISOR = 1000;
 
 const state = {
   settings: null,
@@ -112,6 +117,8 @@ function collectElements() {
     "apiUrl",
     "apiKey",
     "modelName",
+    "timeoutSec",
+    "retryTimes",
     "prompt",
     "saveSettingsBtn",
     "reviewAllBtn",
@@ -128,6 +135,8 @@ function collectElements() {
     "exportReportBtn",
     "clearCommentsBtn",
     "statusText",
+    "statusCurrentStep",
+    "statusNextStep",
     "errorText"
   ];
 
@@ -154,35 +163,88 @@ async function initialize() {
 
   state.settings = await loadSettings();
   state.reviews = getCachedReviews();
-  state.mockMode = elements.mockModeToggle.checked;
 
   fillSettingsForm(state.settings);
+  state.mockMode = Boolean(state.settings?.mockMode);
   renderReviewList();
   renderSummary();
-  setStatus("就绪", "info");
+  setStatus("就绪", "info", DEFAULT_STATUS_STEPS);
 
   await consumeRibbonAction();
 }
 
 function fillSettingsForm(settings) {
+  const timeoutMs = Number.parseInt(settings.timeoutMs, 10);
+  const timeoutSec = Number.isInteger(timeoutMs) ? Math.round(timeoutMs / TIMEOUT_SECONDS_DIVISOR) : "";
   elements.apiUrl.value = settings.apiUrl || "";
   elements.apiKey.value = settings.apiKey || "";
   elements.modelName.value = settings.modelName || "";
+  elements.timeoutSec.value = String(timeoutSec);
+  elements.retryTimes.value = String(settings.retryTimes ?? "");
+  elements.mockModeToggle.checked = Boolean(settings.mockMode);
   elements.prompt.value = settings.prompt || "";
 }
 
 function readSettingsFromForm() {
+  const timeoutSecRaw = elements.timeoutSec.value.trim();
+  const timeoutSec = Number.parseInt(timeoutSecRaw, 10);
+  const timeoutMs = Number.isInteger(timeoutSec) ? String(timeoutSec * TIMEOUT_SECONDS_DIVISOR) : timeoutSecRaw;
+
   return {
+    ...(state.settings || {}),
     apiUrl: elements.apiUrl.value.trim(),
     apiKey: elements.apiKey.value.trim(),
     modelName: elements.modelName.value.trim(),
+    timeoutMs,
+    retryTimes: elements.retryTimes.value.trim(),
+    mockMode: elements.mockModeToggle.checked,
     prompt: elements.prompt.value.trim()
   };
 }
 
-function setStatus(message, kind = "info") {
+function setStatusSteps(currentStep = DEFAULT_STATUS_STEPS.current, nextStep = DEFAULT_STATUS_STEPS.next) {
+  elements.statusCurrentStep.textContent = `当前步骤：${currentStep || DEFAULT_STATUS_STEPS.current}`;
+  elements.statusNextStep.textContent = `下一步骤：${nextStep || DEFAULT_STATUS_STEPS.next}`;
+}
+
+function setStatus(message, kind = "info", steps = null) {
   elements.statusText.textContent = message;
   elements.statusText.className = `status ${kind}`;
+  if (steps) {
+    setStatusSteps(steps.current, steps.next);
+  }
+}
+
+function setReviewStepHints(stage, percent = 0) {
+  const normalizedPercent = Number(percent) || 0;
+
+  if (stage === "prepare") {
+    setStatusSteps("读取文档段落", "校验文本并提交审核请求");
+    return;
+  }
+
+  if (stage === "api") {
+    if (normalizedPercent < 40) {
+      setStatusSteps("提交审核请求", "等待模型返回结果");
+      return;
+    }
+
+    if (normalizedPercent < 60) {
+      setStatusSteps("等待模型返回结果", "解析审核结果");
+      return;
+    }
+
+    setStatusSteps("解析审核结果", "写入 Word 批注");
+    return;
+  }
+
+  if (stage === "comment") {
+    const boundedPercent = Math.max(0, Math.min(100, Math.round(normalizedPercent)));
+    setStatusSteps(`写入 Word 批注（${boundedPercent}%）`, boundedPercent >= 100 ? "刷新列表并生成汇总" : "继续写入剩余批注");
+    return;
+  }
+
+  setStatusSteps("处理中", "请稍候");
 }
 
 function setError(message = "") {
@@ -223,14 +285,22 @@ function setReviewing(reviewing) {
 async function handleSaveSettings() {
   setError("");
   const formSettings = readSettingsFromForm();
-  const validation = validateSettings(formSettings, { requireApiKey: !state.mockMode });
+  const validation = validateSettings(formSettings, { requireApiKey: !formSettings.mockMode });
   if (!validation.valid) {
     setError(validation.errors.join(" "));
+    setStatus("配置校验失败。", "warning", {
+      current: "检查配置项",
+      next: "修正后重新保存"
+    });
     return;
   }
 
   state.settings = saveSettings(formSettings);
-  setStatus("配置已保存。", "success");
+  state.mockMode = Boolean(state.settings.mockMode);
+  setStatus("配置已保存。", "success", {
+    current: "配置保存完成",
+    next: "可开始审核"
+  });
 }
 
 async function startReview(scope) {
@@ -241,18 +311,26 @@ async function startReview(scope) {
   const startedAt = Date.now();
   setError("");
   const formSettings = readSettingsFromForm();
-  const validation = validateSettings(formSettings, { requireApiKey: !state.mockMode });
+  const validation = validateSettings(formSettings, { requireApiKey: !formSettings.mockMode });
   if (!validation.valid) {
     setError(validation.errors.join(" "));
+    setStatus("审核未开始。", "warning", {
+      current: "配置校验失败",
+      next: "修正配置后重新审核"
+    });
     return;
   }
 
   state.settings = saveSettings(formSettings);
+  state.mockMode = Boolean(state.settings.mockMode);
   state.lastScope = scope;
   state.abortController = new AbortController();
   setReviewing(true);
   setProgress(3, "准备审核...");
-  setStatus("审核中...", "info");
+  setStatus("审核中...", "info", {
+    current: "准备审核任务",
+    next: "读取文档段落"
+  });
   console.info(LOG_PREFIX, "用户触发审核。", {
     scope,
     mockMode: state.mockMode,
@@ -273,6 +351,7 @@ async function startReview(scope) {
       signal: state.abortController.signal,
       onProgress: ({ stage, percent, message }) => {
         setProgress(percent, message);
+        setReviewStepHints(stage, percent);
         const bucket = Math.floor(Number(percent || 0) / 10) * 10;
         if (stage !== lastProgressStage || bucket !== lastProgressBucket) {
           lastProgressStage = stage || "";
@@ -294,7 +373,10 @@ async function startReview(scope) {
       renderReviewList();
       renderSummary();
       setProgress(100, "审核完成，未发现问题。");
-      setStatus("审核完成（未发现问题）。", "success");
+      setStatus("审核完成（未发现问题）。", "success", {
+        current: "审核完成（未发现问题）",
+        next: "可调整范围后再次审核"
+      });
       console.info(LOG_PREFIX, "审核结束，无问题。", {
         durationMs: Date.now() - startedAt
       });
@@ -302,13 +384,15 @@ async function startReview(scope) {
     }
 
     setProgress(65, "正在写入 Word 批注...");
+    setStatusSteps("写入 Word 批注", "同步审核结果到列表");
     console.info(LOG_PREFIX, "开始写入 Word 批注。", {
       reviewCount: reviewResult.reviews.length
     });
     const insertedReviews = await applyReviewComments(reviewResult.reviews, {
       signal: state.abortController.signal,
-      onProgress: ({ percent, message }) => {
+      onProgress: ({ stage, percent, message }) => {
         setProgress(65 + percent * 0.35, message);
+        setReviewStepHints(stage || "comment", percent);
       }
     });
 
@@ -316,19 +400,28 @@ async function startReview(scope) {
     renderReviewList();
     renderSummary();
     setProgress(100, `审核完成，共生成 ${insertedReviews.length} 条批注。`);
-    setStatus(`审核完成，共 ${insertedReviews.length} 条问题。`, "success");
+    setStatus(`审核完成，共 ${insertedReviews.length} 条问题。`, "success", {
+      current: "审核完成",
+      next: "可导出报告或定位段落"
+    });
     console.info(LOG_PREFIX, "审核结束并写入批注完成。", {
       insertedCount: insertedReviews.length,
       durationMs: Date.now() - startedAt
     });
   } catch (error) {
     if (error?.name === "AbortError") {
-      setStatus("审核已取消。", "warning");
+      setStatus("审核已取消。", "warning", {
+        current: "审核已取消",
+        next: "可重新发起审核"
+      });
       console.warn(LOG_PREFIX, "审核被取消。", {
         durationMs: Date.now() - startedAt
       });
     } else {
-      setStatus("审核失败。", "error");
+      setStatus("审核失败。", "error", {
+        current: "审核失败",
+        next: "请检查配置后重试"
+      });
       setError(error?.message || "未知错误");
       console.error(LOG_PREFIX, "审核失败。", {
         name: error?.name || "Error",
@@ -354,9 +447,15 @@ function handleCancelReview() {
 function handleMockToggle() {
   state.mockMode = elements.mockModeToggle.checked;
   if (state.mockMode) {
-    setStatus("测试模式已开启。", "info");
+    setStatus("测试模式已开启。", "info", {
+      current: "测试模式已开启",
+      next: "可直接开始审核（不调用真实 API）"
+    });
   } else {
-    setStatus("测试模式已关闭。", "info");
+    setStatus("测试模式已关闭。", "info", {
+      current: "测试模式已关闭",
+      next: "请确认 API 配置后开始审核"
+    });
   }
 }
 
@@ -372,16 +471,25 @@ async function handleClearComments() {
     state.reviews = [];
     renderReviewList();
     renderSummary();
-    setStatus(`已清除 ${removedCount} 条 AI 批注。`, "success");
+    setStatus(`已清除 ${removedCount} 条 AI 批注。`, "success", {
+      current: "批注清理完成",
+      next: "可重新发起审核"
+    });
   } catch (error) {
-    setStatus("清除失败。", "error");
+    setStatus("清除失败。", "error", {
+      current: "批注清理失败",
+      next: "检查文档权限后重试"
+    });
     setError(error?.message || "清除 AI 批注时出现未知错误");
   }
 }
 
 function handleExportReport() {
   if (!state.reviews.length) {
-    setStatus("暂无可导出的审核结果。", "warning");
+    setStatus("暂无可导出的审核结果。", "warning", {
+      current: "导出被跳过",
+      next: "请先执行审核生成结果"
+    });
     return;
   }
 
@@ -391,7 +499,10 @@ function handleExportReport() {
     totalCharacters: state.lastTotalCharacters
   });
 
-  setStatus(`报告已导出：${fileName}`, "success");
+  setStatus(`报告已导出：${fileName}`, "success", {
+    current: "报告导出完成",
+    next: "可继续审核或清除批注"
+  });
 }
 
 function renderSummary() {
@@ -467,9 +578,15 @@ async function handleReviewListClick(event) {
 
   try {
     await locateParagraph(paragraphIndex);
-    setStatus(`已定位到段落 #${paragraphIndex + 1}。`, "info");
+    setStatus(`已定位到段落 #${paragraphIndex + 1}。`, "info", {
+      current: `定位到段落 #${paragraphIndex + 1}`,
+      next: "可查看批注或定位下一条"
+    });
   } catch (error) {
-    setStatus("定位失败。", "error");
+    setStatus("定位失败。", "error", {
+      current: "定位失败",
+      next: "请重试或检查文档结构"
+    });
     setError(error?.message || "无法定位到段落");
   }
 }
@@ -480,7 +597,15 @@ async function locateParagraph(paragraphIndex) {
   }
 
   return Word.run(async (context) => {
-    const paragraph = context.document.body.paragraphs.getByIndex(paragraphIndex);
+    const paragraphs = context.document.body.paragraphs;
+    paragraphs.load("items");
+    await context.sync();
+
+    if (paragraphIndex >= paragraphs.items.length) {
+      throw new Error(`段落 #${paragraphIndex + 1} 不存在，文档结构可能已变化。`);
+    }
+
+    const paragraph = paragraphs.items[paragraphIndex];
     paragraph.getRange("Start").select();
     await context.sync();
   });
@@ -510,7 +635,10 @@ async function consumeRibbonAction() {
 function handleInitError(error) {
   const message = error?.message || String(error);
   if (elements.statusText) {
-    setStatus("初始化失败。", "error");
+    setStatus("初始化失败。", "error", {
+      current: "初始化失败",
+      next: "刷新页面或检查 Office 环境"
+    });
   }
   if (elements.errorText) {
     setError(message);
