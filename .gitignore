@@ -8,3 +8,17 @@ config/settings.json
 logs/
 .env
 .env.local
+
+# Word 文档及临时文件
+*.docx
+~$*.docx
+
+# Claude Code 工具文件
+.claude/
+CLAUDE.md
+AGENTS.md
+plans/
+plan.md
+
+# 测试文件
+tests/
